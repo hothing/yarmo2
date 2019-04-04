@@ -1,0 +1,251 @@
+﻿grammar yarmo_ru; /* JaRMO */ 
+
+bukva_lat : 'a' .. 'z' | 'A' .. 'Z' ;
+bukva_kir : 'a' .. 'ja' | 'A' .. 'Ja' ;
+
+bukva : bukva_lat | bukva_kir ;
+
+dvoichnaja_cifra : '0' | '1' ;
+
+vos'merichnaja_cifra : dvoichnaja_cifra 
+					| '2' | '3' | '4' | '5' | '6' | '7' ;
+
+cifra : vos'merichnaja_cifra | '8' | '9' ;
+
+shestnadcaterichnaja_cifra : cifra | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' ;
+
+logicheskoe : 'istina' | 'lozh'' ;
+
+imja : bukva { bukva | cifra | '_' } ;
+
+slozhnoe_imja : imja {'.' imja} ;
+
+chislo : celoe | racional'noe ;
+
+celoe : polozhitel'noe | otricatel'noe ;
+
+polozhitel'noe : cifra {cifra} ;
+
+otricatel'noe : '-' polozhitel'noe ;
+
+racional'noe : celoe '.' polozhitel'noe [ 'E' celoe ] ;
+
+shestnadcaterichnyj : shestnadcaterichnyj_prefiks 
+					shestnadcaterichnaja_cifra {shestnadcaterichnaja_cifra} ;
+					
+shestnadcaterichnyj_prefiks : 'sh' | 'shl' ;
+
+vos'merichnyj : vosmirichnyj_prefiks 
+					vos'merichnaja_cifra {vos'merichnaja_cifra} ;
+					
+vosmirichnyj_prefiks : 'v' | 'vl' ;
+
+dvoichnyj : dvoichnyj_prefiks dvoichnaja_cifra {dvoichnaja_cifra} ;
+dvoichnyj_prefiks : 'd' | 'dl' ;
+
+stroka : '"' {litera} '"' ;
+
+tekstovyj : ( 't' | 'tl' ) stroka ;
+
+nabor : shestnadcaterichnyj | vos'merichnyj | dvoichnyj | tekstovyj ;
+
+metka : '@' imja ':' ;
+
+adres : peremennaja | adresnaja_para | kosvennost' ;
+
+adresnaja_para : '/' konstanta [',' konstanta] '/' ;
+
+konstanta_prostaja : operand_konstantnogo_vyrazhenija ;
+
+operand_konstantnogo_vyrazhenija : izobrazhenija_znachenija 
+								| imja 
+								| attribut 
+								| sostavnoe ;
+
+konstantnoe_vyrazhenie : operand_konstantnogo_vyrazhenija 
+						{ operacija operand_konstantnogo_vyrazhenija } ;
+
+attribut : ('ir' | 'smeshh' ) imja
+	     | ('irdan' | 'smeshhdan') imja
+	     | 'razmer' imja
+	     | ('razmlok' | 'razmpar' | 'chispar') imja
+	     | 'nomerseg' imja
+	     | ('pragr' | 'levgr') imja ;
+
+blok : 'nachalo' opisanie 'vhod' predlozhenie 'konec' ;
+
+kosvennost' : pervichnoe '^' (adresnaja_para | slozhnoe_imja) ;
+
+izobrazhenie_znachenija : chislo | nabor | sostavnoe | stroka ;
+
+sostavnoe  : zapis'_dlja_sostavnogo 
+			'[' izobrazhenie_znachenija {',' izobrazhenie_znachenija} ']' ;
+
+zapis'_dlja_sostavnogo : gruppa_parallel'nyh_polej ;
+
+slog : granica ':' granica ;
+
+
+opisanie_zapisej : 'zapisi' opisanie_zapisi {';' opisanie_zapisi} ; 
+opisanie_zapisi : imja '=' zapis' ;
+zapis' : imja | izobrazhenie_zapisi ;
+
+izobrazhenie_zapisi : '/' razmer_zapisi '/' 
+		| '/' mnozhitel' '/' 'h' komponenta_massiva 
+		| gruppa_parallel'nyh_polej 
+		| gruppa_posledovatel'nyh_polej ;
+
+izobrazhenie_znachenie : chislo 
+						| nabor 
+						| sostavnoe 
+						| stroka
+						| logicheskoe ;
+
+komanda : '|>' {vos'merichnaja_cifra} '<|' ; 
+						 
+komponenta_massiva : zapis' ;
+
+gruppa_parallel'nyh_polej : '[' pole {',' pole} ']' ;
+
+gruppa_posledovatel'nyh_polej : '(' pole {',' pole} ')' ;
+
+pole : imja [ '=' ( zapis'| slog ) ] 
+		| izobrazhenie_zapisi 
+		| slog ;
+		 
+razmer_zapisi : konstanta ;
+mnozhitel' : konstanta ;
+
+/*granica : polozhitel'noe ;*/
+granica : konstanta ;
+
+konstanta : prostaja_konstanta | postojannoe_vyrazhenie ;
+
+kosvennaja : pervichnoe '^' ( adresnaja_para | imja ) ;
+
+/* selektor_zapisi : ( izobrazhenie_znachenija | imja )['.' selektor_zapisi ] ; */
+
+selektor_zapisi : izobrazhenie_znachenija | slozhnoe_imja ;
+
+opisanie_konstant : 'konstanty' opisanie_konstanty 
+						{';' opisanie_konstanty } ;
+						
+opisanie_konstanty : imja [':' zapis' ] '=' konstanta 
+											{',' konstanta } ; 
+
+opisanie_peremennyh : 'peremennye' opisanie_peremennoj 
+						{';' opisanie_peremennoj } ;
+						
+opisanie_peremennoj : imja [ ':' zapis' ] ;
+
+peremennaja : slozhnoe_imja ;
+
+
+formula : pervichnoe [ operacija pervichnoe 
+						| vydelenie_sloga 
+						| izmenenie_sloga 
+						| izmenenie_sloga_s_zasylkoj 
+						| zasylka ] ;
+
+operacija : operacija_algebraicheskaja 
+			| operacija_sravnenija 
+			| operacija_porjazrjadnaja ;
+
+/*			
+operacija_algebraicheskaja : '+' | '-' | '*' 
+						| 'del' | 'umn' 
+						| 'sl' | 'vch' | 'delr' ;
+						
+operacija_sravnenija : '<' | '≤' | '>' | '≥' | '=' | '≠'
+					| 'm' | 'mr' | 'b' | 'br' ;
+					
+operacija_porjazrjadnaja : '∧' | '∨' ;
+*/
+
+skobki_formula : '(' prostaja_formula ')' ;
+
+prostaja_formula 
+	:  faktor_formula
+	| prostaja_formula '*' faktor_formula
+	| prostaja_formula '//' faktor_formula
+	| prostaja_formula 'del' faktor_formula
+	| prostaja_formula 'umn' faktor_formula
+	| prostaja_formula 'delr' faktor_formula
+	| prostaja_formula '∨' faktor_formula
+	;
+	
+faktor_formula
+   : term_formula
+   | faktor_formula '+' term_formula
+   | faktor_formula '-' term_formula
+   | faktor_formula '∧' term_formula
+   ;
+ 
+term_formula
+   : imja
+   | konstanta
+   | skobki_formula
+   ;
+   
+vydelenie_sloga : '*' zapis' ;
+izmenenie_sloga : '=>'  zapis' '*' pervichnoe ;
+izmenenie_sloga_s_zasylkoj : '->' zapis' '*' adres ;
+
+zasylka : prostaja_zasylka | sovmeshhennaja_zasylka ;
+
+prostaja_zasylka : '->' adres ;
+
+sovmeshhennaja_zasylka : operacija '->' adres
+					| '*' ('->' zapis' '*' adres 
+							| '=>' zapis' '*' pervichnoe )
+					| operacija '->' zapis' '*' adres ;
+
+upravlenie_pervichnoe : al'ternativnoe | ciklicheskoe ;
+al'ternativnoe : uslovnoe | vybirajushhee | perebirajushhee ;
+
+uslovnoe : 'esli' uslovie 'to' predlozhenie ['inache' predlozhenie] 'vse' ;
+
+abzac : predlozhenie {',' predlozhenie} ;
+
+vybirajushhee : 
+			'vybor' predlozhenie 'iz' abzac ['inache' predlozhenie] 'vse' ;
+			 
+perebirajushhee : 'perebor' predlozhenie 'iz' abzac
+					'to' abzac ['inache' predlozhenie] 'vse' ;
+					
+uslovie : prostaja_formula ( 'ist' | 'neist' ) ;
+
+ciklicheskoe : 
+    'poka' uslovie 'cikl' predlozhenie ['inache' predlozhenie] 'vse' 
+    | 'povtorjat'' predlozhenie 
+				['kogda' uslovie ['inache' predlozhenie]] 'vse' ;
+
+predlozhenie : prostoe_predlozhenie { ';' prostoe_predlozhenie } ;
+
+formula_zavershenie : formula [zavershitel'] ;
+
+/* prostoe_predlozhenie : [metka] formula_zavershenie ; */
+
+prostoe_predlozhenie : formula_zavershenie ;
+
+pri_uslovie : 'pri' uslovie 'vse' ;
+
+zavershitel' : ('zavershit'' imja | 'vozvrat' ) /*[pri_uslovie]*/ ;
+
+/*pervichnoe : konstanta | adres | '(' predlozhenie ')' ; */
+pervichnoe : konstanta_prostaja
+	      | adres
+	      | imja
+	      | metka 
+				( al'ternativnoe 
+				| ciklicheskoe 
+				| '(' predlozhenie ')' | blok )
+	      | vyzov_modulja
+	      | vyzov_procedury
+	      | vyzov_teksta
+	      | vyzov_kvaziprocedury
+	      | 'adres' (imja 
+					| slozhnoe_imja 
+					| 'parametr' konstanta )
+	      | 'telo' povtoritel' ;
+
